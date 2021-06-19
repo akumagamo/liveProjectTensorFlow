@@ -1,4 +1,4 @@
-# **liveProject (BETA):** SHuman Pose Estimation with TensorFlow
+# **liveProject (BETA):** Human Pose Estimation with TensorFlow
 ## Versionnumber 1.0.0 (2021-06-19)
 (***Documentation last update 2021-06-19 09:00 CET***)  
 
