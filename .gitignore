@@ -2,5 +2,4 @@ downloads
 node_modules
 fitness-assistant-p2-m1/public
 fitness-assistant-p2-m1/node_modules
-fitness-assistant-p2-m1/*
 !fitness-assistant-p2-m1/src/App.js

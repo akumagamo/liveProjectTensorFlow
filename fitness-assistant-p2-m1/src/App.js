@@ -1,18 +1,18 @@
 import logo from './logo.svg';
 import './App.css';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as tfjsWebGl from '@tensorflow/tfjs-backend-webgl';
 
-
-
+import * as Webcam from 'react-webcam';
 
 
 function App() {
     const [model, setModel] = useState({});    
 
+    const webcamRef = useRef(null);
 
     async function loadPosenet(){
 
@@ -29,7 +29,6 @@ function App() {
             console.info('Posenet Model Loaded…');
     }
 
-
     useEffect(() =>{
         loadPosenet();
     });
@@ -37,20 +36,14 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit 123 <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <br />
-
+      <Webcam
+        audio={false}
+        width={800}
+        height={600}
+        ref={webcamRef}
+        screenshotFormat="image/jpeg"
+        className="web-cam"
+      />
       </header>
     </div>
   );
