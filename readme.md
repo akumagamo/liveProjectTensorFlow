@@ -4,13 +4,13 @@
 
 Here the task for each chapter will listed and optional Notes / Information
 
-## ChapterOne
+## ChapterOne, ChapterTwo, ChapterThree
 
 ### Tasks
 _go to portal for the tasks, and more details_
 
 ### Notes
-_Just commited relevant file, for this submission to keep everything nice an lean_
+_Just commited relevant file, for this submission to keep everything nice an lean. the different solutions are tagged_
 
 ### Output
 ...
