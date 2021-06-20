@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 
 import * as posenet from '@tensorflow-models/posenet';
 import * as tfjsWebGl from '@tensorflow/tfjs-backend-webgl';
+import * as tf from '@tensorflow/tfjs';
 
 import * as Webcam from 'react-webcam';
 
@@ -81,7 +82,9 @@ function App() {
     const [state, setState] = useState( 'waiting');
     const [dataCollect, setDataCollect] = useState( false );
 
-    const [opCollectData, setOpCollectData] = useState({});  
+    const [opCollectData, setOpCollectData] = useState({}); 
+    
+    const [rawData, setRawData] = useState([]); 
     
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
@@ -109,7 +112,12 @@ function App() {
         setWorkoutState({workout: event.target.value, name: event.target.name})
     };
     
-    const handleTrainModel = async () => {};
+    const handleTrainModel = async () => {
+        if(rawData.length > 0){
+            console.info(rawData.length);
+        }
+
+    };
     
     const collectData = async () => {
         setOpCollectData('active');
@@ -145,7 +153,7 @@ function App() {
         let inputValue = event.currentTarget.value;
         
         if( inputValue == 'COLLECT_DATA' ){
-
+            console.info(isPoseEstimation , workoutState , workoutState.workout);
             if(isPoseEstimation && opCollectData == 'inactive'){
                 console.info("STOP");
                 setIsPoseEstimation(!isPoseEstimation);
@@ -192,6 +200,9 @@ function App() {
             const video = webcamRef.current.video;
             const {videoHeight, videoWidth} = webcamRef.current.video;
 
+            const windowWidth = 800;
+            const windowHeight = 600;
+
             webcamRef.current.video.width = videoWidth;
             webcamRef.current.video.height = videoHeight;
 
@@ -200,12 +211,35 @@ function App() {
                     flipHorizontal: false
                 });
 
+                console.info('####################');
                 const endTime = getTime();
-                console.info(pose, endTime - currentTime );
+                let inputs = [];
+
+                console.info( endTime - currentTime );
+                console.info(tf.getBackend());
+                console.info(pose);
+                console.info(workoutState.workout);
+
+                for(let point of pose.keypoints){
+                    if(point.score < 0.1){
+                        point.position.x = 0;
+                        point.position.y = 0;
+                    }
+                    let x = (point.position.x / (windowWidth / 2)) - 1;
+                    let y = (point.position.y / (windowHeight / 2)) - 1;
+                    inputs.push(x,y);
+                }
 
                 console.log('STATE->' + state);
                 if (state === 'collecting') {
-                    console.info(workoutState.workout);
+                    let rawDataRow = { xs: inputs, ys: workoutState.workout}
+
+                    rawData.push(rawDataRow);
+                    setRawData(rawData);
+
+                    const [numOfFeatures, convertedDatasetTraining, convertedDatasetValidation]
+                        = processData(rawData);
+                        console.info(numOfFeatures, convertedDatasetTraining, convertedDatasetValidation);
                 }
 
                 drawCanvas(pose, videoWidth, videoHeight, canvasRef.current);                
@@ -336,7 +370,7 @@ function App() {
                                 {isPoseEstimation? 'Stop' : 'Collect Data'} </Button>
                         </Typography>
                         <Typography style={{marginRight:16}} >
-                        <Button variant='contained' disabled={dataCollect}  value='COLLECT_DATA' onClick={handlePoseEstimation}> Train Model </Button>                        
+                        <Button variant='contained' disabled={dataCollect} onClick={handlePoseEstimation}> Train Model </Button>                        
                     </Typography>
                 </Toolbar>
             </Grid>
