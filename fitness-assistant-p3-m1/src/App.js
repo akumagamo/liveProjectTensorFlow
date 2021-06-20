@@ -9,16 +9,18 @@ import * as Webcam from 'react-webcam';
 
 import {drawKeypoints, drawSkeleton} from './utilities';
 
-import { Grid, makeStyles, AppBar, Toolbar, Typography, Button, Card, CardContent, CardActions } from  '@material-ui/core';
+import { Grid, makeStyles, AppBar, Toolbar, Typography, 
+    Button, Card, CardContent, CardActions, 
+    FormControl, InputLabel, NativeSelect, FormHelperText
+} from  '@material-ui/core';
 
 
 
 function getTime(){
     return (new Date()).getTime();
 }
-/*
-function useStyles(){
-    return makeStyles({
+
+const useStyles =  makeStyles((theme) =>({
         backgroundAppBar: {
             background: '#1875d2'
         },
@@ -29,23 +31,21 @@ function useStyles(){
         statsCard:{
             width: '250px',
             margin: '10px'
+        },
+        singleLine:{
+            flex:'display',
+            alignItems: 'center',
+            textAlign: 'justify',
+            alignContent: 'center'
+        },
+        formControl: {
+            margin: theme.spacing(1),
+            minWidth: 120
         }
-      });
-}*/
-const useStyles = makeStyles({
-    backgroundAppBar: {
-        background: '#1875d2'
-    },
-    title: {
-        flexGrow: 1,
-        textAlign: 'left'
-    },
-    statsCard:{
-        width: '250px',
-        margin: '10px'
-    }
-  });
+      }));
 
+
+window.useStyles = useStyles;
 function App() {
     const classes = useStyles()
     const POSE_INTERVAL_IN_MS = 1000;
@@ -53,10 +53,18 @@ function App() {
     const [model, setModel] = useState({});    
 
     const [isPoseEstimation, setIsPoseEstimation] = useState(false);    
+    const [workoutState, setWorkoutState] = useState({
+        workout: '',
+        name: 'hai',
+      });
     
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
     const poseEstimationLoop =  useRef(null);
+
+    const handleWorkoutSelect = () => {
+
+    };
 
     async function loadPosenet(){
 
@@ -227,6 +235,26 @@ function App() {
                         </Grid>
                     </CardActions>
                 </Card>
+            </Grid>
+            <Grid item={true} xs={12} className={classes.singleLine}>
+                <FormControl className={classes.formControl}>
+                    <InputLabel htmlFor='age-native-helper'>Workout</InputLabel>
+                    <NativeSelect inputProps onChange={handleWorkoutSelect} value={workoutState.workout}>
+                        <option>None</option>
+                        <option>Jumping Jacks</option>
+                        <option>Wall-Sit</option>
+                        <option>Lunges</option>
+                    </NativeSelect>
+                    <FormHelperText>
+                        Select training data type’  
+                    </FormHelperText>                
+                </FormControl>
+                <Toolbar>
+                    <Typography style={{marginRight:16}} >
+                        <Button variant='contained' > Collect Data </Button>
+                        <Button variant='contained' > Train Model </Button>                        
+                    </Typography>
+                </Toolbar>
             </Grid>
         </Grid>
     </div>
