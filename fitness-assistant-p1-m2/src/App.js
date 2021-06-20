@@ -1,11 +1,13 @@
 import logo from './logo.svg';
+import * as tf from '@tensorflow/tfjs';
 import './App.css';
 
 function App() {
 
 
 const handleRunTraining = () =>{
-    	console.info('Run Training');
+    console.info('Run Training');
+    console.info(tf.tensor([1, 2, 3, 4]));
 };
 
 
