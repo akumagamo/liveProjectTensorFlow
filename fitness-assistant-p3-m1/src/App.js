@@ -11,13 +11,18 @@ import {drawKeypoints, drawSkeleton} from './utilities';
 
 import { Grid, makeStyles, AppBar, Toolbar, Typography, 
     Button, Card, CardContent, CardActions, 
-    FormControl, InputLabel, NativeSelect, FormHelperText
+    FormControl, InputLabel, NativeSelect, FormHelperText,
+    Snackbar
 } from  '@material-ui/core';
 
-
+import MuiAlert from  '@material-ui/lab/Alert';
 
 function getTime(){
     return (new Date()).getTime();
+}
+
+function Alert(props) {
+    return <MuiAlert variant="filled" {...props} />;
 }
 
 const useStyles =  makeStyles((theme) =>({
@@ -42,28 +47,75 @@ const useStyles =  makeStyles((theme) =>({
             margin: theme.spacing(1),
             minWidth: 120
         }
-      }));
+}));
 
+const delay = (time) => {
+    return new Promise((resolve, reject) => {
+        if (isNaN(time)) {
+            reject(new Error('delay requires a valid number.'));
+        } else {
+            setTimeout(resolve, time);
+        }
+    });
+}
 
 window.useStyles = useStyles;
 function App() {
     const classes = useStyles()
     const POSE_INTERVAL_IN_MS = 1000;
 
-    const [model, setModel] = useState({});    
+    const [model, setModel] = useState({});   
+    
+    const [snackbarDataColl, setSnackbarDataColl] = useState({});   
+    const [snackbarDataNotColl, setSnackbarDataNotColl] = useState({});   
 
     const [isPoseEstimation, setIsPoseEstimation] = useState(false);    
     const [workoutState, setWorkoutState] = useState({
         workout: '',
-        name: 'hai',
+        name: '',
       });
+
+    const [state, setState] = useState( 'waiting');
+
+    const [opCollectData, setOpCollectData] = useState({});  
     
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
+
     const poseEstimationLoop =  useRef(null);
 
-    const handleWorkoutSelect = () => {
+    const openSnackbarDataColl = () => {
+        setSnackbarDataColl();
+    };
 
+    const closeSnackbarDataColl = () => {
+        setSnackbarDataColl();
+    };
+    
+    const openSnackbarDataNotColl = () => {
+        setSnackbarDataNotColl();
+    };
+
+    const closeSnackbarDataNotColl = () => {
+        setSnackbarDataNotColl();
+    };
+
+    const handleWorkoutSelect = (event) => {
+
+        setWorkoutState({workout: event.target.value, name: event.target.name})
+    };
+
+    const collectData = async () => {
+        setOpCollectData('active');
+
+        setTimeout( _ => {
+            setState('collecting');
+            setTimeout( _ => {
+                console.info("inactive ---->");
+                setOpCollectData('inactive');
+                setState('waiting');
+            } ,10 * 1000);
+        },10 * 1000);
     };
 
     async function loadPosenet(){
@@ -80,14 +132,24 @@ function App() {
             console.info('Posenet Model Loaded…');
     }
 
-    const handlePoseEstimation = () =>{
+    const handlePoseEstimation = (event) =>{
+        console.info(isPoseEstimation , event.currentTarget.value , workoutState, opCollectData);
+        let inputValue = event.currentTarget.value;
+        
+        if( inputValue == 'COLLECT_DATA' ){
 
-        if(isPoseEstimation){
-            stopPoseEstimation();   
-        } else{
-            startPoseEstimation();
+            if(isPoseEstimation && opCollectData == 'inactive'){
+                console.info("STOP");
+                setIsPoseEstimation(!isPoseEstimation);
+                setState('waiting');
+                stopPoseEstimation();   
+            } else if(!isPoseEstimation && workoutState && workoutState.workout != ''){
+                console.info("START");
+                setIsPoseEstimation(!isPoseEstimation);
+                startPoseEstimation();
+                collectData();
+            }
         }
-        setIsPoseEstimation(!isPoseEstimation);
     };
 
     const drawCanvas = (pose, videoWidth, videoHeight, canvas) => {
@@ -130,6 +192,12 @@ function App() {
 
                 const endTime = getTime();
                 console.info(pose, endTime - currentTime );
+
+                console.log('STATE->' + state);
+                if (state === 'collecting') {
+                    console.info(workoutState.workout);
+                }
+
                 drawCanvas(pose, videoWidth, videoHeight, canvasRef.current);                
             }, POSE_INTERVAL_IN_MS );
         }   
@@ -239,23 +307,37 @@ function App() {
             <Grid item={true} xs={12} className={classes.singleLine}>
                 <FormControl className={classes.formControl}>
                     <InputLabel htmlFor='age-native-helper'>Workout</InputLabel>
-                    <NativeSelect inputProps onChange={handleWorkoutSelect} value={workoutState.workout}>
-                        <option>None</option>
-                        <option>Jumping Jacks</option>
-                        <option>Wall-Sit</option>
-                        <option>Lunges</option>
+                    <NativeSelect inputProps={{
+                        name: 'workout',
+                        id: 'age-native-helper',
+                      }}
+                       onChange={handleWorkoutSelect} value={workoutState.workout}>
+                        <option value=""></option>
+                        <option value="JJ">Jumping Jacks</option>
+                        <option value="WS">Wall-Sit</option>
+                        <option value="L">Lunges</option>
                     </NativeSelect>
-                    <FormHelperText>
-                        Select training data type’  
-                    </FormHelperText>                
+                    <FormHelperText> Select training data type </FormHelperText>                
                 </FormControl>
                 <Toolbar>
-                    <Typography style={{marginRight:16}} >
-                        <Button variant='contained' > Collect Data </Button>
+                <Typography style={{marginRight:16}} >
+                        <Button variant='contained'  value='COLLECT_DATA' 
+                            color={isPoseEstimation? 'secondary' : 'default'} onClick={handlePoseEstimation}>
+                                {isPoseEstimation? 'Stop' : 'Collect Data'} </Button>
+                        </Typography>
+                        <Typography style={{marginRight:16}} >
                         <Button variant='contained' > Train Model </Button>                        
                     </Typography>
                 </Toolbar>
             </Grid>
+            <Snackbar open={snackbarDataColl} autoHideDuration={2000}
+             onClose={closeSnackbarDataColl}>
+                <Alert severity="info" onClose={closeSnackbarDataColl}>Started collecting pose data!</Alert>
+            </Snackbar>
+            <Snackbar open={snackbarDataNotColl} autoHideDuration={2000}
+             onClose={closeSnackbarDataNotColl}>
+                <Alert severity="success" onClose={closeSnackbarDataNotColl}>Completed collecting pose data!</Alert>
+            </Snackbar>
         </Grid>
     </div>
   );
