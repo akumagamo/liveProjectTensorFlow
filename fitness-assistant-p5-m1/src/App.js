@@ -23,6 +23,56 @@ import { Grid, makeStyles, AppBar, Toolbar, Typography,
 
 import MuiAlert from  '@material-ui/lab/Alert';
 
+
+import { Dialog } from '@material-ui/core';
+import MuiDialogTitle from '@material-ui/core/DialogTitle';
+import MuiDialogContent from '@material-ui/core/DialogContent';
+import MuiDialogActions from '@material-ui/core/DialogActions';
+import { withStyles } from '@material-ui/core/styles';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
+
+
+const styles = (theme) => ({
+    root: {
+      margin: 0,
+      padding: theme.spacing(2),
+    },
+    closeButton: {
+      position: 'absolute',
+      right: theme.spacing(1),
+      top: theme.spacing(1),
+      color: theme.palette.grey[500],
+    },
+  });
+  
+  const DialogTitle = withStyles(styles)((props) => {
+    const { children, classes, onClose, ...other } = props;
+    return (
+      <MuiDialogTitle disableTypography className={classes.root} {...other}>
+        <Typography variant="h6">{children}</Typography>
+        {onClose ? (
+          <IconButton aria-label="close" className={classes.closeButton} onClick={onClose}>
+            <CloseIcon />
+          </IconButton>
+        ) : null}
+      </MuiDialogTitle>
+    );
+  });
+  
+  const DialogContent = withStyles((theme) => ({
+    root: {
+      padding: theme.spacing(2),
+    },
+  }))(MuiDialogContent);
+  
+  const DialogActions = withStyles((theme) => ({
+    root: {
+      margin: 0,
+      padding: theme.spacing(1),
+    },
+  }))(MuiDialogActions);
+
 function getTime(){
     return (new Date()).getTime();
 }
@@ -100,6 +150,13 @@ function App() {
     const [wallSitCount, setWallSitCount] = useState(0);
     const [lungesCount, setLungesCount] = useState(0);
 
+    const [historyDialog, setHistoryDialog]= useState(false);
+
+
+    const [jumpingJackCountTotal, setJumpingJackCountTotal] = useState(0);
+    const [wallSitCountTotal, setWallSitCountTotal] = useState(0);
+    const [lungesCountTotal, setLungesCountTotal] = useState(0);
+
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
 
@@ -116,6 +173,10 @@ function App() {
     let jjCount = 0;
     let wsCount = 0;
     let lCount  = 0;
+
+    const getStats = (workoutType) => {
+        return localStorage.getItem(workoutType) === null ? 0 : localStorage.getItem(workoutType);
+    }
 
     const updateStats = (workoutType) => {
         let workoutCount = localStorage.getItem(workoutType);
@@ -363,7 +424,10 @@ function App() {
     }
 
     function showWorkoutHistory (){
-
+        setJumpingJackCountTotal( getStats('JJ'));
+        setWallSitCountTotal(getStats('WS'));
+        setLungesCountTotal(getStats('L'));
+        openHistoryDialog();
     }
 
     const stopPoseEstimation = () => {
@@ -371,8 +435,25 @@ function App() {
     }
 
     useEffect(() =>{
-        loadPosenet();startPoseEstimation 
+        loadPosenet(); 
     },[]);
+
+    const openHistoryDialog = () => {
+        setHistoryDialog(true);
+      };
+      const closeHistoryDialog = () => {
+        setHistoryDialog(false);
+      };
+
+      async function resetAll(){
+        setRawData([]);
+
+        setJumpingJackCount(0);
+        setWallSitCount(0);
+        setLungesCount(0);
+      
+        //indexedDB.deleteDatabase('database');
+      }
 
   return (
     <div className="App">
@@ -386,8 +467,8 @@ function App() {
                     >Fitness Assistant</Typography>
                 </Toolbar>
                 <Button disabled={ dataCollect || trainModel } color='inherit' onClick={ handlePoseEstimation } value='START_WORKOUT'>{isPoseEstimationWorkout ? "Stop" : "Start Workout"}</Button>
-                <Button color='inherit' onclick={showWorkoutHistory} disabled ={dataCollect || trainModel}>History</Button>
-                <Button color='inherit'>Reset</Button>
+                <Button color='inherit' onClick={showWorkoutHistory} disabled ={dataCollect || trainModel}>History</Button>
+                <Button color='inherit' onClick={resetAll} disabled={dataCollect || trainModel || isPoseEstimationWorkout}>Reset</Button>
             </AppBar>
             <Grid spacing={3} container={true} >
                 <Card>
@@ -495,6 +576,52 @@ function App() {
                     {trainModel ? <CircularProgress color="secondary"/> : null}
                 </Toolbar>
             </Grid>
+            <Dialog onClose={closeHistoryDialog } open={historyDialog}
+                aria-labelledby="customized-dialog-title"
+                maxWidth="md"
+            >
+<DialogTitle id="customized-dialog-title" onClose = {closeHistoryDialog}>Workout History</DialogTitle>
+<DialogContent>
+    <Toolbar>
+    <Card className={classes.statsCard}>
+        <CardContent>
+            <Typography className={classes.title} color="textSecondary" gutterBottom>
+            Jumping Jacks
+            </Typography>
+            <Typography variant="h2" component="h2" color="secondary">
+            {jumpingJackCountTotal}
+            </Typography>
+        </CardContent>
+    </Card>
+    <Card className={classes.statsCard}>
+        <CardContent>
+            <Typography className={classes.title} color="textSecondary" gutterBottom>
+            Wall-Sit
+            </Typography>
+            <Typography variant="h2" component="h2" color="secondary">
+            {wallSitCountTotal}
+            </Typography>
+        </CardContent>
+    </Card>
+    <Card className={classes.statsCard}>
+        <CardContent>
+            <Typography className={classes.title} color="textSecondary" gutterBottom>
+            Lunges
+            </Typography>
+            <Typography variant="h2" component="h2" color="secondary">
+            {lungesCountTotal}
+            </Typography>
+        </CardContent>
+    </Card>
+    </Toolbar>
+</DialogContent>
+<DialogContent>
+
+</DialogContent>
+<DialogActions>
+    <Button autoFocus={true} color="primary" onClick={closeHistoryDialog}>Close</Button>
+</DialogActions>
+            </Dialog>
             <Snackbar open={snackbarDataColl} autoHideDuration={2000}
              onClose={closeSnackbarDataColl}>
                 <Alert severity="info" onClose={closeSnackbarDataColl}>Started collecting pose data!</Alert>
