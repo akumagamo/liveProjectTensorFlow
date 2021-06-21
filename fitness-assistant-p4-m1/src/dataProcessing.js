@@ -2,6 +2,8 @@ import * as tf from '@tensorflow/tfjs';
 
 export function processData(rawData) {
 
+
+    console.info('--->', rawData)
     let trainingLength = Math.floor(rawData.length * .8);
     const shuffledData = tf.data.array(rawData).shuffle(10);
 
@@ -11,7 +13,7 @@ export function processData(rawData) {
     const convertTrainingSet = convertedDataset(trainingSet);
     const convertValidationSet = convertedDataset(validationSet);
 
-    return[ rawData[0].length, convertTrainingSet, convertValidationSet];
+    return[ rawData[0]['xs'].length, convertTrainingSet, convertValidationSet];
 };
 
 

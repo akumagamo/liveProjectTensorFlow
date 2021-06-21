@@ -79,12 +79,14 @@ function App() {
         name: '',
       });
 
-    const [state, setState] = useState( 'waiting');
+    let state = 'waiting';
     const [dataCollect, setDataCollect] = useState( false );
 
     const [opCollectData, setOpCollectData] = useState({}); 
     
     const [rawData, setRawData] = useState([]); 
+
+    const [trainModel, setTrainModel] = useState(false); 
     
     const canvasRef = useRef(null);
     const webcamRef = useRef(null);
@@ -114,7 +116,13 @@ function App() {
     
     const handleTrainModel = async () => {
         if(rawData.length > 0){
-            console.info(rawData.length);
+            setTrainModel(true);
+            
+            const [numOfFeatures, convertedDatasetTraining, convertedDatasetValidation] = processData(rawData);
+            console.info(numOfFeatures, convertedDatasetTraining, convertedDatasetValidation);
+            await runTraining( convertedDatasetTraining, convertedDatasetValidation, numOfFeatures);
+            setTrainModel(false);
+            
         }
 
     };
@@ -123,13 +131,12 @@ function App() {
         setOpCollectData('active');
 
         setTimeout( _ => {
-            setState('collecting');
             openSnackbarDataColl();
+            state = 'collecting';
             setTimeout( _ => {
-                console.info("inactive ---->");
-                setOpCollectData('inactive');
-                setState('waiting');
                 openSnackbarDataNotColl();
+                setOpCollectData('inactive');
+                state = 'waiting';
             } ,10 * 1000);
         },10 * 1000);
     };
@@ -153,19 +160,16 @@ function App() {
         let inputValue = event.currentTarget.value;
         
         if( inputValue == 'COLLECT_DATA' ){
-            console.info(isPoseEstimation , workoutState , workoutState.workout);
             if(isPoseEstimation && opCollectData == 'inactive'){
-                console.info("STOP");
                 setIsPoseEstimation(!isPoseEstimation);
-                setState('waiting');
-                setDataCollect(false);
                 stopPoseEstimation();   
+                state = 'waiting';
+                setDataCollect(false);
             } else if(!isPoseEstimation && workoutState && workoutState.workout != ''){
-                console.info("START");
                 setIsPoseEstimation(!isPoseEstimation);
-                setDataCollect(true)
                 startPoseEstimation();
                 collectData();
+                setDataCollect(true)
             }
         }
     };
@@ -221,25 +225,25 @@ function App() {
                 console.info(workoutState.workout);
 
                 for(let point of pose.keypoints){
-                    if(point.score < 0.1){
-                        point.position.x = 0;
-                        point.position.y = 0;
+                    let x = 0;
+                    let y = 0;
+                    if(point.score >= 0.1){
+                        x = point.position.x ;
+                        y = point.position.y ;
                     }
-                    let x = (point.position.x / (windowWidth / 2)) - 1;
-                    let y = (point.position.y / (windowHeight / 2)) - 1;
+                    x = (x / (windowWidth / 2)) - 1;
+                    y =  (y / (windowHeight / 2)) - 1;
                     inputs.push(x,y);
                 }
 
                 console.log('STATE->' + state);
                 if (state === 'collecting') {
+                    console.info('RAW ##################');
                     let rawDataRow = { xs: inputs, ys: workoutState.workout}
 
                     rawData.push(rawDataRow);
                     setRawData(rawData);
 
-                    const [numOfFeatures, convertedDatasetTraining, convertedDatasetValidation]
-                        = processData(rawData);
-                        console.info(numOfFeatures, convertedDatasetTraining, convertedDatasetValidation);
                 }
 
                 drawCanvas(pose, videoWidth, videoHeight, canvasRef.current);                
@@ -365,12 +369,13 @@ function App() {
                 </FormControl>
                 <Toolbar>
                 <Typography style={{marginRight:16}} >
-                        <Button variant='contained'  value='COLLECT_DATA' 
+                        <Button disabled={trainModel}
+                        variant='contained'  value='COLLECT_DATA' 
                             color={isPoseEstimation? 'secondary' : 'default'} onClick={handlePoseEstimation}>
                                 {isPoseEstimation? 'Stop' : 'Collect Data'} </Button>
                         </Typography>
                         <Typography style={{marginRight:16}} >
-                        <Button variant='contained' disabled={dataCollect} onClick={handlePoseEstimation}> Train Model </Button>                        
+                        <Button variant='contained' disabled={dataCollect}  onClick={handleTrainModel}> Train Model </Button>                        
                     </Typography>
                 </Toolbar>
             </Grid>
