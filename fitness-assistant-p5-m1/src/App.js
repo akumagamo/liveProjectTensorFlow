@@ -250,40 +250,6 @@ function App() {
             }
         } 
     };
-     
-    // runInference
-
-    if(runningWorkout === true){
-        if(workoutCallDelay === false){
-            let rawDataRow = { xs: inputs, ys: workoutState.workout};
-            let result = runInference(model, rawData);
-
-            if (result !== null) {
-                if (result === 'JJ') {
-                  jjCount += 1;
-                  setJumpingJackCount(jjCount);
-                  updateStats('JJ');
-                } else if (result === 'WS') {
-                  wsCount += 1;
-                  setWallSitCount(wsCount);
-                  updateStats('WS');
-                } else if (result === 'L') {
-                  lCount += 1;
-                  setLungesCount(lCount);
-                  updateStats('L');
-                }
-                workoutCallDelay = true;
-                workoutDelayStart = new Date().getTime();
-              }
-
-        } else {
-            const workoutTimeDiff = new Date().getTime() - workoutDelayStart;
-            if (workoutTimeDiff > 1500) {
-                workoutDelayStart = 0;
-                workoutCallDelay = false;
-            }
-        }
-    } 
 
     const drawCanvas = (pose, videoWidth, videoHeight, canvas) => {
         if(canvas){
@@ -357,9 +323,47 @@ function App() {
 
                 }
 
+            // runInference
+
+            if(runningWorkout === true){
+                if(workoutCallDelay === false){
+                    let rawDataRow = { xs: inputs, ys: workoutState.workout};
+                    let result = runInference(model, rawData);
+
+                    if (result !== null) {
+                        if (result === 'JJ') {
+                        jjCount += 1;
+                        setJumpingJackCount(jjCount);
+                        updateStats('JJ');
+                        } else if (result === 'WS') {
+                        wsCount += 1;
+                        setWallSitCount(wsCount);
+                        updateStats('WS');
+                        } else if (result === 'L') {
+                        lCount += 1;
+                        setLungesCount(lCount);
+                        updateStats('L');
+                        }
+                        workoutCallDelay = true;
+                        workoutDelayStart = new Date().getTime();
+                    }
+
+                } else {
+                    const workoutTimeDiff = new Date().getTime() - workoutDelayStart;
+                    if (workoutTimeDiff > 1500) {
+                        workoutDelayStart = 0;
+                        workoutCallDelay = false;
+                    }
+                }
+            }
+
                 drawCanvas(pose, videoWidth, videoHeight, canvasRef.current);                
             }, POSE_INTERVAL_IN_MS );
         }   
+    }
+
+    function showWorkoutHistory (){
+
     }
 
     const stopPoseEstimation = () => {
@@ -367,7 +371,7 @@ function App() {
     }
 
     useEffect(() =>{
-        loadPosenet();
+        loadPosenet();startPoseEstimation 
     },[]);
 
   return (
@@ -382,7 +386,7 @@ function App() {
                     >Fitness Assistant</Typography>
                 </Toolbar>
                 <Button disabled={ dataCollect || trainModel } color='inherit' onClick={ handlePoseEstimation } value='START_WORKOUT'>{isPoseEstimationWorkout ? "Stop" : "Start Workout"}</Button>
-                <Button color='inherit'>History</Button>
+                <Button color='inherit' onclick={showWorkoutHistory} disabled ={dataCollect || trainModel}>History</Button>
                 <Button color='inherit'>Reset</Button>
             </AppBar>
             <Grid spacing={3} container={true} >
