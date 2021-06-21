@@ -16,7 +16,7 @@ import { processData } from './dataProcessing';
 import { Grid, makeStyles, AppBar, Toolbar, Typography, 
     Button, Card, CardContent, CardActions, 
     FormControl, InputLabel, NativeSelect, FormHelperText,
-    Snackbar
+    Snackbar, CircularProgress 
 } from  '@material-ui/core';
 
 import MuiAlert from  '@material-ui/lab/Alert';
@@ -73,6 +73,8 @@ function App() {
     const [snackbarDataColl, setSnackbarDataColl] = useState(false);   
     const [snackbarDataNotColl, setSnackbarDataNotColl] = useState(false);   
 
+    const [snackbarTrainingError, setSnackbarTrainingError] = useState(false);
+
     const [isPoseEstimation, setIsPoseEstimation] = useState(false);    
     const [workoutState, setWorkoutState] = useState({
         workout: '',
@@ -113,6 +115,17 @@ function App() {
 
         setWorkoutState({workout: event.target.value, name: event.target.name})
     };
+
+    const openSnackbarTrainingError = () => {
+        setSnackbarTrainingError(true);
+      };
+      
+      const closeSnackbarTrainingError = (event, reason) => {
+        if (reason === 'clickaway') {
+          return;
+        }
+        setSnackbarTrainingError(false);
+      };
     
     const handleTrainModel = async () => {
         if(rawData.length > 0){
@@ -123,6 +136,8 @@ function App() {
             await runTraining( convertedDatasetTraining, convertedDatasetValidation, numOfFeatures);
             setTrainModel(false);
             
+        } else {
+            openSnackbarTrainingError();
         }
 
     };
@@ -137,7 +152,7 @@ function App() {
                 openSnackbarDataNotColl();
                 setOpCollectData('inactive');
                 state = 'waiting';
-            } ,10 * 1000);
+            } ,30 * 1000);
         },10 * 1000);
     };
 
@@ -377,6 +392,7 @@ function App() {
                         <Typography style={{marginRight:16}} >
                         <Button variant='contained' disabled={dataCollect}  onClick={handleTrainModel}> Train Model </Button>                        
                     </Typography>
+                    {trainModel ? <CircularProgress color="secondary"/> : null}
                 </Toolbar>
             </Grid>
             <Snackbar open={snackbarDataColl} autoHideDuration={2000}
@@ -386,6 +402,11 @@ function App() {
             <Snackbar open={snackbarDataNotColl} autoHideDuration={2000}
              onClose={closeSnackbarDataNotColl}>
                 <Alert severity="success" onClose={closeSnackbarDataNotColl}>Completed collecting pose data!</Alert>
+            </Snackbar>
+            <Snackbar open={snackbarTrainingError} autoHideDuration={2000} onClose={closeSnackbarTrainingError}>
+            <Alert onClose={closeSnackbarTrainingError} severity="error">
+                Training data is not available!
+            </Alert>
             </Snackbar>
         </Grid>
     </div>
